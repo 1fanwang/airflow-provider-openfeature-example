@@ -20,6 +20,10 @@ x-airflow: &airflow
     OF_BACKEND: unleash
     UNLEASH_URL: http://unleash:4242/unleash/api
     UNLEASH_TOKEN: "default:development.unleash-insecure-api-token"
+    # No-login public UI: Airflow 3.x's new UI has no anonymous FAB role, but SimpleAuthManager's
+    # all-admins mode serves it without a login (fine for a rebuildable demo).
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.api_fastapi.auth.managers.simple.simple_auth_manager.SimpleAuthManager
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "True"
   depends_on:
     postgres:
       condition: service_healthy
