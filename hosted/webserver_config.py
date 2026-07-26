@@ -1,12 +1,10 @@
-"""Webserver config for the hosted, publicly read-only demo.
+"""FAB auth manager config for the hosted, publicly read-only demo.
 
-Anonymous visitors get the Viewer role, so they can browse the UI, the DAGs, and the runs, but cannot
-trigger, edit, pause, or delete anything. A maintainer still logs in as admin (set ADMIN_PASSWORD).
+Anonymous visitors get the Viewer role: browse DAGs, runs, and task instances, but cannot trigger,
+edit, or delete. A maintainer still logs in as admin (password set at init).
 """
 
 from flask_appbuilder.const import AUTH_DB
 
 AUTH_TYPE = AUTH_DB
-
-# Unauthenticated visitors are read-only.
 AUTH_ROLE_PUBLIC = "Viewer"

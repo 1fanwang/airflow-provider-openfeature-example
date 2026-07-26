@@ -7,10 +7,15 @@ piece of platform wiring: register the backend. Airflow imports it at settings i
 
 from __future__ import annotations
 
+import os
 import time
 
 from openfeature import api
 from openfeature.contrib.provider.flagd import FlagdProvider
 
-api.set_provider(FlagdProvider(host="flagd", port=8013))
+# Default to the "flagd" compose service; the single-container hosted image sets
+# OPENFEATURE_FLAGD_HOST=localhost since flagd runs beside Airflow in that case.
+host = os.getenv("OPENFEATURE_FLAGD_HOST", "flagd")
+port = int(os.getenv("OPENFEATURE_FLAGD_PORT", "8013"))
+api.set_provider(FlagdProvider(host=host, port=port))
 time.sleep(1)  # let the gRPC resolver connect before the first DAG parse

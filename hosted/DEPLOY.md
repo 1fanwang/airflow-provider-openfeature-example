@@ -1,53 +1,40 @@
-# Deploy the demo as a public, read-only, always-on instance
+# Deploy the hosted demo
 
-The container in `hosted/` runs the whole demo (Airflow + flagd + a live-activity loop) and serves the
-UI read-only to anonymous visitors (`AUTH_ROLE_PUBLIC=Viewer`); a maintainer logs in with `ADMIN_PASSWORD`.
-It needs a Postgres. Pick one path.
+The stack in `docker-compose.hosted.yml` is the whole thing: real Apache Airflow 3.3.0 with the
+OpenFeature provider, a real [Unleash](https://www.getunleash.io/) backend and its admin UI, and
+`flagd` as the no-UI reference backend, all behind [Caddy](https://caddyserver.com/) (automatic
+HTTPS). Change the rollout in the Unleash UI at `/unleash` and tasks move between pools in the
+Airflow UI at `/`. No DAG code changes.
 
-## Azure (recommended if you have credits)
+## What a visitor sees
 
-### Option A: a small VM running compose (simplest)
+- `/` — the Airflow UI. Airflow 3.x serves it through the api-server and requires a login; the demo
+  ships a read-only `viewer` / `viewer` account. (Airflow 2.x allowed anonymous `AUTH_ROLE_PUBLIC`;
+  the 3.x UI does not, so a shared read-only login is the substitute.)
+- `/unleash` — the real Unleash admin UI. Log in as `admin` / `$UNLEASH_ADMIN_PASSWORD`, open the
+  `airflow.task.pool` flag, and change the rollout percentage or toggle it off. Within a few seconds
+  the provider picks it up, the next DAG parse re-runs the policy, and the split changes.
 
-```bash
-az group create -n of-demo -l eastus
-az vm create -n of-demo -g of-demo --image Ubuntu2204 --size Standard_B2s \
-  --admin-username azureuser --generate-ssh-keys --public-ip-sku Standard
-az vm open-port -g of-demo -n of-demo --port 8080
-
-# then on the VM:
-#   curl -fsSL https://get.docker.com | sh
-#   git clone https://github.com/1fanwang/airflow-provider-openfeature-example.git && cd airflow-provider-openfeature-example
-#   ADMIN_PASSWORD=<pick-one> docker compose -f hosted/docker-compose.hosted.yml up -d --build
-# open http://<vm-public-ip>:8080  (anonymous = read-only)
-```
-
-A `Standard_B2s` (2 vCPU / 4 GB) is about $30/mo, well inside the credit.
-
-### Option B: Azure Container Apps (managed, no VM)
+## Run it on any Docker host
 
 ```bash
-az group create -n of-demo -l eastus
-az postgres flexible-server create -g of-demo -n of-demo-db --public-access 0.0.0.0 \
-  --admin-user airflow --admin-password '<db-password>' --tier Burstable --sku-name Standard_B1ms
-az containerapp up -n of-demo -g of-demo --source . --ingress external --target-port 8080 \
-  --env-vars "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql://airflow:<db-password>@of-demo-db.postgres.database.azure.com/airflow?sslmode=require" "ADMIN_PASSWORD=<pick-one>"
-# set the app's min replicas to 1 so it never scales to zero (always-on):
-az containerapp update -n of-demo -g of-demo --min-replicas 1
+SITE_ADDRESS=:80 docker compose -f docker-compose.hosted.yml up -d --build
 ```
 
-## Render (paid: ~$7/mo always-on, free sleeps)
+Open <http://localhost>. For a public host with HTTPS, point a domain at the machine and set
+`SITE_ADDRESS=your.domain` (Caddy fetches a Let's Encrypt cert) and `BASE_URL=https://your.domain`.
+Set real values for `ADMIN_PASSWORD`, `UNLEASH_ADMIN_PASSWORD`, and `SECRET_KEY`.
 
-The repo ships a `render.yaml` blueprint. Render dashboard -> New -> Blueprint -> pick the repo -> Apply.
+## Azure (always-on VM)
 
-## Any Docker host (Oracle Always Free, a Pi, your laptop)
+`deploy/azure-vm.sh` provisions a `Standard_B2ms` VM (2 vCPU / 8 GB, ~$60/mo), builds the image in
+ACR, opens 80/443, and brings the stack up behind Caddy. Set the variables at the top (or accept the
+generated defaults) after `az login` to the target subscription, then run it. It prints the public
+URL and the generated passwords at the end.
 
-```bash
-ADMIN_PASSWORD=<pick-one> docker compose -f hosted/docker-compose.hosted.yml up -d --build
-```
+## Security note
 
-## After it's up
-
-- Public URL serves the Airflow UI read-only. The activity loop ramps the flag and triggers the DAGs
-  every few minutes, so visitors always see a live canary split across the pools.
-- Log in as `admin` / `ADMIN_PASSWORD` to drive it yourself.
-- Put it behind a domain and HTTPS with your host's ingress (Azure/Render do this for you).
+Exposing the Unleash admin UI lets visitors change flags — that is the point of the demo, and the
+flag change is self-healing (rebuild to reset). Do not point this stack at anything that matters, and
+always set a strong `UNLEASH_ADMIN_PASSWORD`. A full feature-flag admin console is not something to
+run unauthenticated on the public internet.

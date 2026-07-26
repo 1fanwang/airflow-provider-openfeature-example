@@ -1,0 +1,10 @@
+{$SITE_ADDRESS} {
+	# Real Unleash admin UI (flip the flag / adjust the rollout here) under /unleash.
+	handle /unleash* {
+		reverse_proxy unleash:4242
+	}
+	# Everything else is the real Airflow UI (anonymous read-only Viewer).
+	handle {
+		reverse_proxy airflow-apiserver:8080
+	}
+}
