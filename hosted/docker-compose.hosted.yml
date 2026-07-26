@@ -1,0 +1,34 @@
+# Self-host / VM deploy: the read-only hosted Airflow + its Postgres.
+# Run from the repo root:  ADMIN_PASSWORD=<pick-one> docker compose -f hosted/docker-compose.hosted.yml up -d --build
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 10
+    restart: always
+
+  airflow:
+    build:
+      context: ..
+      dockerfile: hosted/Dockerfile
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql://airflow:airflow@postgres/airflow
+      PORT: "8080"
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+volumes:
+  pgdata: {}
