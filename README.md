@@ -69,6 +69,28 @@ docker compose exec airflow-scheduler airflow tasks test author_ab_model run_mod
 # [author_ab_model] flag resolved arm='treatment'; running the treatment implementation
 ```
 
+### The full A/B loop: measure which arm wins
+
+`dags/author_ab_experiment.py` goes further. It assigns 200 shards to treatment or control by the flag,
+runs the matching aggregation, records each real elapsed time with the provider's `track_outcome`, then
+reads the result with its standard-library `analysis` (SRM and lift). No experiment-platform account needed.
+
+```bash
+docker compose exec airflow-scheduler airflow dags test author_ab_experiment 2024-01-02
+```
+
+Real output:
+
+```
+[experiment] counts={'treatment': 95, 'control': 105}  means_ms={treatment: 0.046, control: 0.260}
+[experiment] SRM ok=True (p=0.480) -- the split matches the flag
+[experiment] lift(treatment vs control) = -82.1%  (negative means treatment is faster)
+```
+
+SRM confirms the split landed where the flag said, so the lift is trustworthy: treatment is 82% faster.
+`track_outcome` sends the same events to Statsig, GrowthBook, or your warehouse the moment you point
+`config/airflow_local_settings.py` at one. The demo has no sink, so the verdict is read from the run.
+
 ## Point it at your own backend
 
 The demo uses flagd because it runs locally with no account. The provider reads any OpenFeature backend,

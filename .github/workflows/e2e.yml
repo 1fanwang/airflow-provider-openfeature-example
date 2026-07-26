@@ -49,6 +49,11 @@ jobs:
           print("kill ok:", dict(pools))
           PY
 
+      - name: Run the A/B experiment DAG (persona B) and assert it succeeds
+        run: |
+          docker compose exec -T airflow-scheduler airflow dags test author_ab_experiment 2024-01-02 2>&1 | tee /tmp/exp.log
+          grep -q "SRM ok=True" /tmp/exp.log
+
       - name: Dump logs on failure
         if: failure()
         run: docker compose logs --tail=120
