@@ -20,6 +20,9 @@ x-airflow: &airflow
     OF_BACKEND: unleash
     UNLEASH_URL: http://unleash:4242/unleash/api
     UNLEASH_TOKEN: "default:development.unleash-insecure-api-token"
+    # Optional supplement: an OpenFeature tab in the Airflow UI that shows the live flag effect
+    # (read-only). The backends keep their own admin UIs for flipping flags.
+    OPENFEATURE_UI_ENABLED: "true"
     # No-login public UI: Airflow 3.x's new UI has no anonymous FAB role, but SimpleAuthManager's
     # all-admins mode serves it without a login (fine for a rebuildable demo).
     AIRFLOW__CORE__AUTH_MANAGER: airflow.api_fastapi.auth.managers.simple.simple_auth_manager.SimpleAuthManager

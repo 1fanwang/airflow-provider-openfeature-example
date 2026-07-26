@@ -53,6 +53,14 @@ if backend == "unleash":
     api.set_provider(
         UnleashProvider(client, context_field="userId", enabled_values={"airflow.task.pool": "canary_pool"})
     )
+elif backend == "flipt":
+    # Flipt evaluates over OFREP (plain HTTP per call) with no background threads, so it is fork-safe:
+    # a PythonOperator worker forked from Airflow 3.x's multi-threaded supervisor can evaluate without
+    # deadlocking. This is why the hosted demo drives the canary AND the A/B experiment with Flipt.
+    from openfeature.contrib.provider.flipt import FliptProvider
+
+    api.set_provider(FliptProvider(base_url=os.getenv("FLIPT_URL", "http://flipt:8080"), namespace="default"))
+    time.sleep(1)
 else:
     from openfeature.contrib.provider.flagd import FlagdProvider
 

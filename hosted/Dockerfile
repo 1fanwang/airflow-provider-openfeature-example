@@ -14,12 +14,13 @@ USER airflow
 # with the flagd + Unleash backends.
 RUN pip install --no-cache-dir "apache-airflow-providers-fab" \
       --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-3.12.txt"
-RUN pip install --no-cache-dir "airflow-provider-openfeature[flagd,unleash]==0.1.0"
+RUN pip install --no-cache-dir "airflow-provider-openfeature[flagd,unleash]==0.1.0" "openfeature-provider-flipt"
 
 COPY --chown=airflow:0 hosted/webserver_config.py /opt/airflow/webserver_config.py
 COPY --chown=airflow:0 hosted/airflow_local_settings.py /opt/airflow/config/airflow_local_settings.py
 COPY --chown=airflow:0 dags/ /opt/airflow/dags/
 COPY --chown=airflow:0 flags/ /opt/airflow/flags/
+COPY --chown=airflow:0 plugins/ /opt/airflow/plugins/
 
 ENV AIRFLOW__CORE__EXECUTOR=LocalExecutor \
     AIRFLOW__CORE__AUTH_MANAGER=airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager \

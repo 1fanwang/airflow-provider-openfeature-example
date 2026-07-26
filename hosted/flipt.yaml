@@ -1,0 +1,39 @@
+version: "1.4"
+namespace: default
+segments:
+  - key: everyone
+    name: everyone
+    match_type: ANY_MATCH_TYPE
+flags:
+  - key: airflow.task.pool
+    name: airflow.task.pool
+    description: Moves a percentage of Airflow tasks to canary_pool
+    type: VARIANT_FLAG_TYPE
+    enabled: true
+    variants:
+      - key: canary_pool
+      - key: default_pool
+    rules:
+      - segment: everyone
+        rank: 1
+        distributions:
+          - variant: canary_pool
+            rollout: 30
+          - variant: default_pool
+            rollout: 70
+  - key: author.model_ab
+    name: author.model_ab
+    description: Assigns author DAG runs to treatment/control
+    type: VARIANT_FLAG_TYPE
+    enabled: true
+    variants:
+      - key: treatment
+      - key: control
+    rules:
+      - segment: everyone
+        rank: 1
+        distributions:
+          - variant: treatment
+            rollout: 50
+          - variant: control
+            rollout: 50
