@@ -95,7 +95,18 @@ SRM confirms the split landed where the flag said, so the lift is trustworthy: t
 
 The demo uses flagd because it runs locally with no account. The provider reads any OpenFeature backend,
 so swap flagd for LaunchDarkly, GrowthBook, Unleash, Statsig, or an in-house engine by changing the one
-line in `config/airflow_local_settings.py`. The DAGs and the policy stay the same.
+line in `config/airflow_local_settings.py`. The DAGs and the policy stay the same. The full backend list
+and how to add your own are in the provider's
+[Extending guide](https://github.com/1fanwang/airflow-provider-openfeature/blob/main/docs/extending.md).
+
+## Run it in your own Airflow
+
+This repo is a prebuilt demo. To wire the provider into an Airflow you already run (install, enable the
+policy, register your backend), follow the provider's
+[getting-started](https://github.com/1fanwang/airflow-provider-openfeature/blob/main/docs/getting-started.md),
+and see [Architecture](https://github.com/1fanwang/airflow-provider-openfeature/blob/main/docs/architecture.md)
+and [Use cases](https://github.com/1fanwang/airflow-provider-openfeature/blob/main/docs/use-cases.md) for
+the concepts and the measurement loop.
 
 ## Clean up
 
