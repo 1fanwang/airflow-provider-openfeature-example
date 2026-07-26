@@ -32,4 +32,23 @@ echo "enable $FLAG in $ENV"
 curl -s -X POST "$BASE/api/admin/projects/$PROJ/features/$FLAG/environments/$ENV/on" \
   -H "$ADMIN" -o /dev/null -w "  -> %{http_code}\n" || true
 
+# Second flag: the A/B experiment (author.model_ab), a 50/50 treatment/control variant split.
+FLAG2=author.model_ab
+echo "create flag $FLAG2"
+curl -s -X POST "$BASE/api/admin/projects/$PROJ/features" -H "$ADMIN" -H 'content-type: application/json' \
+  -d "{\"name\":\"$FLAG2\",\"type\":\"experiment\",\"description\":\"Assigns author DAG runs to treatment/control\"}" \
+  -o /dev/null -w "  -> %{http_code}\n" || true
+
+echo "strategy 100% + variants treatment/control 50/50 in $ENV"
+curl -s -X POST "$BASE/api/admin/projects/$PROJ/features/$FLAG2/environments/$ENV/strategies" \
+  -H "$ADMIN" -H 'content-type: application/json' \
+  -d "{\"name\":\"flexibleRollout\",\"parameters\":{\"rollout\":\"100\",\"stickiness\":\"default\",\"groupId\":\"$FLAG2\"}}" \
+  -o /dev/null -w "  -> %{http_code}\n" || true
+curl -s -X PUT "$BASE/api/admin/projects/$PROJ/features/$FLAG2/environments/$ENV/variants" \
+  -H "$ADMIN" -H 'content-type: application/json' \
+  -d '[{"name":"treatment","weightType":"variable","weight":500,"stickiness":"default"},{"name":"control","weightType":"variable","weight":500,"stickiness":"default"}]' \
+  -o /dev/null -w "  -> %{http_code}\n" || true
+curl -s -X POST "$BASE/api/admin/projects/$PROJ/features/$FLAG2/environments/$ENV/on" \
+  -H "$ADMIN" -o /dev/null -w "  -> %{http_code}\n" || true
+
 echo "done"

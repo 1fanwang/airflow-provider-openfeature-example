@@ -114,7 +114,6 @@ services:
         sleep 75
         while true; do
           airflow dags trigger platform_pool_canary  2>/dev/null || true
-          airflow dags trigger author_ab_experiment  2>/dev/null || true
           sleep 180
         done
     restart: always

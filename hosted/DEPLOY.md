@@ -38,3 +38,14 @@ Exposing the Unleash admin UI lets visitors change flags — that is the point o
 flag change is self-healing (rebuild to reset). Do not point this stack at anything that matters, and
 always set a strong `UNLEASH_ADMIN_PASSWORD`. A full feature-flag admin console is not something to
 run unauthenticated on the public internet.
+
+## The A/B experiment DAG
+
+`author_ab_experiment` (a real `PythonOperator` assign/measure/decide loop) runs in the local
+`docker compose up` demo, but the always-on hosted box only auto-runs the canary. Airflow 3.x's task
+supervisor is multi-threaded and forks each `PythonOperator` worker; a feature-flag client with a
+background poller (Unleash, gRPC flagd) deadlocks in that forked child. The canary uses `EmptyOperator`,
+which Airflow completes without forking a worker, so it is unaffected. Trigger `author_ab_experiment`
+yourself against a non-forking executor (SequentialExecutor, or `docker compose up` locally) to see the
+full experiment loop.
+
