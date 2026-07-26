@@ -1,0 +1,45 @@
+{
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
+  "flags": {
+    "airflow.task.pool": {
+      "state": "ENABLED",
+      "variants": {
+        "canary": "canary_pool",
+        "default": "default_pool"
+      },
+      "defaultVariant": "default",
+      "targeting": {
+        "fractional": [
+          [
+            "canary",
+            0
+          ],
+          [
+            "default",
+            100
+          ]
+        ]
+      }
+    },
+    "author.model_ab": {
+      "state": "ENABLED",
+      "variants": {
+        "treatment": "treatment",
+        "control": "control"
+      },
+      "defaultVariant": "control",
+      "targeting": {
+        "fractional": [
+          [
+            "treatment",
+            50
+          ],
+          [
+            "control",
+            50
+          ]
+        ]
+      }
+    }
+  }
+}

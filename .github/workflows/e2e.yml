@@ -1,0 +1,58 @@
+name: e2e
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  compose-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Boot Airflow + flagd
+        run: docker compose up -d --build
+
+      - name: Wait for the scheduler
+        run: |
+          for i in $(seq 1 40); do
+            if docker compose exec -T airflow-scheduler airflow version >/dev/null 2>&1; then
+              echo "scheduler up"; break
+            fi
+            sleep 5
+          done
+
+      - name: Ramp to 100%, assert every task moves to canary_pool
+        run: |
+          ./scripts/ramp.sh 100
+          sleep 3
+          docker compose exec -T airflow-scheduler python - <<'PY'
+          from collections import Counter
+          from airflow.models.dagbag import DagBag
+          d = DagBag("/opt/airflow/dags/platform_pool_canary.py", include_examples=False).dags["platform_pool_canary"]
+          pools = Counter(t.pool for t in d.tasks)
+          assert pools == Counter({"canary_pool": 10}), pools
+          print("100% ok:", dict(pools))
+          PY
+
+      - name: Kill switch (0%), assert revert to default_pool
+        run: |
+          ./scripts/ramp.sh 0
+          sleep 3
+          docker compose exec -T airflow-scheduler python - <<'PY'
+          from collections import Counter
+          from airflow.models.dagbag import DagBag
+          d = DagBag("/opt/airflow/dags/platform_pool_canary.py", include_examples=False).dags["platform_pool_canary"]
+          pools = Counter(t.pool for t in d.tasks)
+          assert pools == Counter({"default_pool": 10}), pools
+          print("kill ok:", dict(pools))
+          PY
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs --tail=120
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

@@ -1,0 +1,14 @@
+{
+  "name": "airflow-provider-openfeature demo",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [8080, 8013],
+  "portsAttributes": {
+    "8080": { "label": "Airflow UI", "onAutoForward": "openBrowser" },
+    "8013": { "label": "flagd" }
+  },
+  "postCreateCommand": "docker compose up -d --build",
+  "postAttachCommand": "echo 'Airflow UI is on forwarded port 8080 (admin / admin). Ramp with: ./scripts/ramp.sh 50'"
+}
