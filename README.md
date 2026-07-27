@@ -16,7 +16,6 @@ A public, always-on instance runs on Azure (Airflow 3.3.0, provider reading a re
 | Surface | URL | What it shows |
 |---|---|---|
 | Airflow UI | <https://ofopenfeature780983.eastus.cloudapp.azure.com/> | tasks landing in `canary_pool`, driven by a flag |
-| OpenFeature panel | <https://ofopenfeature780983.eastus.cloudapp.azure.com/openfeature/> | which flags are currently moving which tasks |
 | Unleash admin UI | <https://ofopenfeature780983.eastus.cloudapp.azure.com/unleash/> | flip the flag or change the rollout, then watch Airflow react |
 
 The provider itself lives at

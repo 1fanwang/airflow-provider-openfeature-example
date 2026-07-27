@@ -20,7 +20,6 @@ COPY --chown=airflow:0 hosted/webserver_config.py /opt/airflow/webserver_config.
 COPY --chown=airflow:0 hosted/airflow_local_settings.py /opt/airflow/config/airflow_local_settings.py
 COPY --chown=airflow:0 dags/ /opt/airflow/dags/
 COPY --chown=airflow:0 flags/ /opt/airflow/flags/
-COPY --chown=airflow:0 plugins/ /opt/airflow/plugins/
 
 ENV AIRFLOW__CORE__EXECUTOR=LocalExecutor \
     AIRFLOW__CORE__AUTH_MANAGER=airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager \
