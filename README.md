@@ -8,7 +8,7 @@ then moves a subset of tasks to a canary pool, ramps it, and reverts, without ed
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/1fanwang/airflow-provider-openfeature-example)
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/1fanwang/airflow-provider-openfeature-example)
 
-## See it live — no install, no login
+## See it live, no install or login
 
 A public, always-on instance runs on Azure (Airflow 3.3.0, provider reading a real
 [Flipt](https://flipt.io) backend over OFREP):
