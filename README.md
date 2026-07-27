@@ -8,6 +8,21 @@ then moves a subset of tasks to a canary pool, ramps it, and reverts, without ed
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/1fanwang/airflow-provider-openfeature-example)
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/1fanwang/airflow-provider-openfeature-example)
 
+## See it live — no install, no login
+
+A public, always-on instance runs on Azure (Airflow 3.3.0, provider reading a real
+[Unleash](https://www.getunleash.io) backend):
+
+| Surface | URL | What it shows |
+|---|---|---|
+| Airflow UI | <https://ofopenfeature780983.eastus.cloudapp.azure.com/> | tasks landing in `canary_pool`, driven by a flag |
+| OpenFeature panel | <https://ofopenfeature780983.eastus.cloudapp.azure.com/openfeature/> | which flags are currently moving which tasks |
+| Unleash admin UI | <https://ofopenfeature780983.eastus.cloudapp.azure.com/unleash/> | flip the flag or change the rollout, then watch Airflow react |
+
+The provider itself lives at
+[`airflow-provider-openfeature`](https://github.com/1fanwang/airflow-provider-openfeature)
+([PyPI](https://pypi.org/project/airflow-provider-openfeature/)). Prefer to run it yourself? Keep reading.
+
 ## Run it
 
 You need Docker. Nothing else.
