@@ -35,15 +35,17 @@ B_COMPOSE=$(base64 < docker-compose.hosted.yml)
 B_CADDY=$(base64 < hosted/Caddyfile)
 B_SETUP=$(base64 < hosted/setup_unleash.sh)
 B_FLAGS=$(base64 < flags/flags.json)
+B_LANDING=$(base64 < hosted/landing/index.html)
 
 SCRIPT=$(cat <<OUTER
 set -e
 command -v docker >/dev/null || curl -fsSL https://get.docker.com | sh
-mkdir -p /opt/demo/hosted /opt/demo/flags && cd /opt/demo
+mkdir -p /opt/demo/hosted/landing /opt/demo/flags && cd /opt/demo
 echo '$B_COMPOSE' | base64 -d > docker-compose.hosted.yml
 echo '$B_CADDY'   | base64 -d > hosted/Caddyfile
 echo '$B_SETUP'   | base64 -d > hosted/setup_unleash.sh
 echo '$B_FLAGS'   | base64 -d > flags/flags.json
+echo '$B_LANDING' | base64 -d > hosted/landing/index.html
 cat > .env <<ENV
 OF_IMAGE=$ACR.azurecr.io/of-demo:next
 SITE_ADDRESS=$FQDN
@@ -64,8 +66,9 @@ az vm run-command invoke -g "$RG" -n of-demo-vm --command-id RunShellScript \
 cat <<DONE
 
   Demo is coming up (Caddy needs ~30s for its cert).
-    Airflow : https://$FQDN            login viewer / viewer   (read-only)
-    Unleash : https://$FQDN/unleash    login admin  / $UNLEASH_ADMIN_PASSWORD
+    Landing : https://$FQDN                a static entry page linking Airflow + Unleash
+    Airflow : https://$FQDN/dags           no-login, read-only
+    Unleash : https://$FQDN/unleash        login admin  / $UNLEASH_ADMIN_PASSWORD
     Airflow admin: admin / $ADMIN_PASSWORD
 
   Flip the airflow.task.pool rollout in the Unleash UI and watch the pools change in Airflow.

@@ -135,6 +135,7 @@ services:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
     volumes:
       - ./hosted/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./hosted/landing:/srv/landing:ro
       - caddy_data:/data
     depends_on:
       airflow-apiserver: { condition: service_started }

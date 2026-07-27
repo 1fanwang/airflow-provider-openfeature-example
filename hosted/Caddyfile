@@ -3,7 +3,14 @@
 	handle /unleash* {
 		reverse_proxy unleash:4242
 	}
-	# Everything else is the real Airflow UI (anonymous read-only Viewer).
+	# A small static landing page at exactly "/". Deep links (/dags, /home, /api, /assets) fall
+	# through to Airflow below, so this shadows only the site root.
+	@root path /
+	handle @root {
+		root * /srv/landing
+		file_server
+	}
+	# Everything else is the real Airflow UI (no-login).
 	handle {
 		reverse_proxy airflow-apiserver:8080
 	}
