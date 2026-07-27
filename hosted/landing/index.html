@@ -47,10 +47,10 @@
   <p class="lede">
     This is a real Apache Airflow 3.x with
     <a href="https://github.com/1fanwang/airflow-provider-openfeature"><code style="font-size:15px">airflow-provider-openfeature</code></a>
-    installed, reading a real <a href="https://www.getunleash.io">Unleash</a> backend. A flag moves a
-    subset of tasks to a canary pool, ramps it, and reverts, without editing a DAG.
+    installed, reading a real <a href="https://flipt.io">Flipt</a> backend. A flag moves a subset of
+    tasks to a canary pool, ramps it, and reverts, without editing a DAG.
   </p>
-  <p class="sub">Flip the flag in Unleash on the right, then watch the tasks change pool in Airflow on the left.</p>
+  <p class="sub">Change the flag in Flipt on the right, then watch the tasks change pool in Airflow on the left.</p>
 
   <div class="cards">
     <a class="card" href="/dags">
@@ -58,17 +58,17 @@
       <p>The <code class="k">platform_pool_canary</code> DAG has 10 tasks asking for the default pool and no flag code. Watch them land in <code class="k">canary_pool</code>.</p>
       <span class="go">/dags</span>
     </a>
-    <a class="card" href="/unleash/">
-      <h2>Open Unleash &rarr;</h2>
+    <a class="card" href="/flipt">
+      <h2>Open Flipt &rarr;</h2>
       <p>The real flag backend. Change the rollout on <code class="k">airflow.task.pool</code> or flip the kill switch, then watch Airflow react.</p>
-      <span class="go">/unleash/ &middot; sign in with any email</span>
+      <span class="go">flag admin UI &middot; no login</span>
     </a>
   </div>
 
   <div class="steps">
     <h3>Try it in about a minute</h3>
     <ol>
-      <li>Open <a href="/unleash/">Unleash</a> (sign in with any email, no password), find the flag <code class="k">airflow.task.pool</code>, and change its rollout percentage.</li>
+      <li>Open <a href="/flipt">Flipt</a> (no login), find the flag <code class="k">airflow.task.pool</code>, and change its rollout percentage.</li>
       <li>Wait ~30&ndash;60s for the next DAG parse to pick up the change.</li>
       <li>Open <a href="/dags">Airflow</a>, open <code class="k">platform_pool_canary</code>, click a task, then <b>Instance Details</b>, and read its <b>Pool</b>. The DAG source never changed; the policy set it from the flag.</li>
     </ol>
@@ -83,9 +83,10 @@
 
   <p class="note">
     The provider is an ordinary pip package that plugs into an Airflow cluster policy and an OpenFeature
-    provider; it does not fork Airflow or patch the scheduler. Unleash is the backend with a UI here;
-    a headless <a href="https://flagd.dev">flagd</a> also runs as a reference. The same code works with
-    LaunchDarkly, GrowthBook, Statsig, or an in-house engine.
+    provider; it does not fork Airflow or patch the scheduler. Flipt is the backend with a UI here; it
+    evaluates over OFREP (HTTP per call), which is fork-safe, so it also backs the live A/B experiment's
+    Python tasks. A headless <a href="https://flagd.dev">flagd</a> runs as a reference. The same code
+    works with GO Feature Flag, GrowthBook, LaunchDarkly, or an in-house engine.
   </p>
 </div>
 </body>

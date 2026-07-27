@@ -11,13 +11,13 @@ then moves a subset of tasks to a canary pool, ramps it, and reverts, without ed
 ## See it live — no install, no login
 
 A public, always-on instance runs on Azure (Airflow 3.3.0, provider reading a real
-[Unleash](https://www.getunleash.io) backend):
+[Flipt](https://flipt.io) backend over OFREP):
 
 | Surface | URL | What it shows |
 |---|---|---|
-| Demo home | <https://ofopenfeature780983.eastus.cloudapp.azure.com/> | a landing page explaining the demo, with links into both UIs |
+| Demo home | <https://ofopenfeature780983.eastus.cloudapp.azure.com/> | a landing page explaining the demo, with links into Airflow and Flipt |
 | Airflow UI | <https://ofopenfeature780983.eastus.cloudapp.azure.com/dags> | tasks landing in `canary_pool`, driven by a flag |
-| Unleash admin UI | <https://ofopenfeature780983.eastus.cloudapp.azure.com/unleash/> | flip the flag or change the rollout, then watch Airflow react |
+| Flipt admin UI | <https://ofopenfeature780983.eastus.cloudapp.azure.com/flipt> | change the rollout or flip the kill switch, then watch Airflow react |
 
 The provider itself lives at
 [`airflow-provider-openfeature`](https://github.com/1fanwang/airflow-provider-openfeature)
@@ -105,6 +105,11 @@ Real output:
 SRM confirms the split landed where the flag said, so the lift is trustworthy: treatment is 82% faster.
 `track_outcome` sends the same events to Statsig, GrowthBook, or your warehouse the moment you point
 `config/airflow_local_settings.py` at one. The demo has no sink, so the verdict is read from the run.
+
+> On the **hosted** demo (Airflow 3.x, LocalExecutor) the canary runs live, but this A/B DAG's Python
+> tasks are not auto-scheduled: Airflow 3.x's Task SDK supervisor is multi-threaded and forking a task
+> worker from it deadlocks the child at startup, independent of this provider. Run the A/B on this local
+> demo (Airflow 2.11, no fork issue) or with `airflow tasks test`, as shown above.
 
 ## Point it at your own backend
 

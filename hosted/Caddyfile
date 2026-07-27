@@ -1,7 +1,7 @@
 {$SITE_ADDRESS} {
-	# Real Unleash admin UI (flip the flag / adjust the rollout here) under /unleash.
-	handle /unleash* {
-		reverse_proxy unleash:4242
+	# Convenience redirect so the landing can link "/flipt" without knowing the sslip.io host/IP.
+	handle /flipt* {
+		redir https://{$FLIPT_ADDRESS}/ 302
 	}
 	# A small static landing page at exactly "/". Deep links (/dags, /home, /api, /assets) fall
 	# through to Airflow below, so this shadows only the site root.
@@ -14,4 +14,9 @@
 	handle {
 		reverse_proxy airflow-apiserver:8080
 	}
+}
+
+# Flipt's admin UI on its own hostname (Flipt is not subpath-aware, so it gets a host, not a /path).
+{$FLIPT_ADDRESS} {
+	reverse_proxy flipt:8080
 }

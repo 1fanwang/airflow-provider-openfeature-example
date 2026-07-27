@@ -28,12 +28,17 @@ az vm create -g "$RG" -n of-demo-vm --image Ubuntu2204 --size Standard_B2ms \
 az vm open-port -g "$RG" -n of-demo-vm --port 80 --priority 900 -o none
 az vm open-port -g "$RG" -n of-demo-vm --port 443 --priority 901 -o none
 
+# Flipt's admin UI gets its own hostname (it is not subpath-aware). sslip.io resolves
+# flipt.<ip>.sslip.io to the VM with no DNS setup, and Caddy auto-issues a cert for it.
+IP=$(az vm list-ip-addresses -g "$RG" -n of-demo-vm --query "[0].virtualMachine.network.publicIpAddresses[0].ipAddress" -o tsv)
+FLIPT_ADDRESS="flipt.$IP.sslip.io"
+
 echo ">> deliver the stack and bring it up (via run-command; SSH is often restricted)"
 ACR_USER=$(az acr credential show -n "$ACR" --query username -o tsv)
 ACR_PW=$(az acr credential show -n "$ACR" --query "passwords[0].value" -o tsv)
 B_COMPOSE=$(base64 < docker-compose.hosted.yml)
 B_CADDY=$(base64 < hosted/Caddyfile)
-B_SETUP=$(base64 < hosted/setup_unleash.sh)
+B_FLIPT=$(base64 < hosted/flipt.yaml)
 B_FLAGS=$(base64 < flags/flags.json)
 B_LANDING=$(base64 < hosted/landing/index.html)
 
@@ -43,17 +48,17 @@ command -v docker >/dev/null || curl -fsSL https://get.docker.com | sh
 mkdir -p /opt/demo/hosted/landing /opt/demo/flags && cd /opt/demo
 echo '$B_COMPOSE' | base64 -d > docker-compose.hosted.yml
 echo '$B_CADDY'   | base64 -d > hosted/Caddyfile
-echo '$B_SETUP'   | base64 -d > hosted/setup_unleash.sh
+echo '$B_FLIPT'   | base64 -d > hosted/flipt.yaml
 echo '$B_FLAGS'   | base64 -d > flags/flags.json
 echo '$B_LANDING' | base64 -d > hosted/landing/index.html
 cat > .env <<ENV
 OF_IMAGE=$ACR.azurecr.io/of-demo:next
 SITE_ADDRESS=$FQDN
 BASE_URL=https://$FQDN
+FLIPT_ADDRESS=$FLIPT_ADDRESS
 HTTP_PORT=80
 ADMIN_PASSWORD=$ADMIN_PASSWORD
 SECRET_KEY=$SECRET_KEY
-UNLEASH_ADMIN_PASSWORD=$UNLEASH_ADMIN_PASSWORD
 ENV
 docker login $ACR.azurecr.io -u $ACR_USER -p '$ACR_PW'
 docker compose -f docker-compose.hosted.yml --env-file .env pull -q
@@ -65,12 +70,13 @@ az vm run-command invoke -g "$RG" -n of-demo-vm --command-id RunShellScript \
 
 cat <<DONE
 
-  Demo is coming up (Caddy needs ~30s for its cert).
-    Landing : https://$FQDN                a static entry page linking Airflow + Unleash
+  Demo is coming up (Caddy needs ~30s per host for its cert).
+    Landing : https://$FQDN                a static entry page linking Airflow + Flipt
     Airflow : https://$FQDN/dags           no-login, read-only
-    Unleash : https://$FQDN/unleash        login admin  / $UNLEASH_ADMIN_PASSWORD
+    Flipt   : https://$FLIPT_ADDRESS       flag admin UI (no login)
     Airflow admin: admin / $ADMIN_PASSWORD
 
-  Flip the airflow.task.pool rollout in the Unleash UI and watch the pools change in Airflow.
+  Change the airflow.task.pool rollout in the Flipt UI and watch the pools change in Airflow;
+  the author_ab_experiment DAG runs the live A/B (Flipt is fork-safe over OFREP).
   Tear down with:  az group delete -n $RG --yes --no-wait
 DONE

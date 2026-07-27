@@ -54,13 +54,50 @@ if backend == "unleash":
         UnleashProvider(client, context_field="userId", enabled_values={"airflow.task.pool": "canary_pool"})
     )
 elif backend == "flipt":
-    # Flipt evaluates over OFREP (plain HTTP per call) with no background threads, so it is fork-safe:
-    # a PythonOperator worker forked from Airflow 3.x's multi-threaded supervisor can evaluate without
-    # deadlocking. This is why the hosted demo drives the canary AND the A/B experiment with Flipt.
-    from openfeature.contrib.provider.flipt import FliptProvider
+    # Flipt evaluates over OFREP (HTTP per call). Build the real provider lazily, on first evaluation, so
+    # our HTTP client is created per process (after any fork) rather than inherited across one -- a good
+    # fork-safety habit. Note this alone does NOT make live PythonOperator scheduling work on Airflow
+    # 3.x's LocalExecutor: its Task SDK supervisor is itself multi-threaded, and forking a task worker
+    # from it deadlocks the child during Airflow's own startup (SIGKILL after "Pre Execute"), before any
+    # provider code runs. So the hosted (3.x) demo runs the EmptyOperator canary live; run the A/B
+    # experiment on the local 2.x demo or with `airflow tasks test` (both exercise this same code).
+    from openfeature.provider import AbstractProvider
+    from openfeature.provider.metadata import Metadata
 
-    api.set_provider(FliptProvider(base_url=os.getenv("FLIPT_URL", "http://flipt:8080"), namespace="default"))
-    time.sleep(1)
+    class LazyFliptProvider(AbstractProvider):
+        """Defers the real FliptProvider (and its HTTP client) to first use, per process (fork-safe)."""
+
+        def __init__(self, base_url: str, namespace: str = "default") -> None:
+            self._base_url = base_url
+            self._namespace = namespace
+            self._real: AbstractProvider | None = None
+
+        def _ensure(self) -> AbstractProvider:
+            if self._real is None:
+                from openfeature.contrib.provider.flipt import FliptProvider
+
+                self._real = FliptProvider(base_url=self._base_url, namespace=self._namespace)
+            return self._real
+
+        def get_metadata(self) -> Metadata:
+            return Metadata(name="LazyFliptProvider")
+
+        def resolve_boolean_details(self, flag_key, default_value, evaluation_context=None):
+            return self._ensure().resolve_boolean_details(flag_key, default_value, evaluation_context)
+
+        def resolve_string_details(self, flag_key, default_value, evaluation_context=None):
+            return self._ensure().resolve_string_details(flag_key, default_value, evaluation_context)
+
+        def resolve_integer_details(self, flag_key, default_value, evaluation_context=None):
+            return self._ensure().resolve_integer_details(flag_key, default_value, evaluation_context)
+
+        def resolve_float_details(self, flag_key, default_value, evaluation_context=None):
+            return self._ensure().resolve_float_details(flag_key, default_value, evaluation_context)
+
+        def resolve_object_details(self, flag_key, default_value, evaluation_context=None):
+            return self._ensure().resolve_object_details(flag_key, default_value, evaluation_context)
+
+    api.set_provider(LazyFliptProvider(base_url=os.getenv("FLIPT_URL", "http://flipt:8080")))
 else:
     from openfeature.contrib.provider.flagd import FlagdProvider
 
