@@ -50,6 +50,9 @@ services:
       DATABASE_URL: postgres://unleash:unleash@unleash-db/unleash
       DATABASE_SSL: "false"
       BASE_URI_PATH: "/unleash"
+      # Demo auth: a visitor signs in with any email, no password and no signup (the login page's
+      # "Sign up" link points at Unleash's paid cloud, which this OSS server does not use).
+      AUTH_TYPE: demo
       INIT_ADMIN_API_TOKENS: "*:*.unleash-insecure-admin-api-token"
       INIT_CLIENT_API_TOKENS: "default:development.unleash-insecure-api-token"
       INIT_ADMIN_USERNAME: admin
